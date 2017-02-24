@@ -2,7 +2,7 @@
 
 namespace HashCode2017.DataObjects
 {
-    public struct Cache
+    public class Cache
     {
         public int CacheId { get; set; }
         public int RemainingCapacity { get; set; }

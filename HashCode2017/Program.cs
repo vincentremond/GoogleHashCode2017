@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System;
 using System.Text;
+using System.Diagnostics;
 
 namespace HashCode2017
 {
@@ -12,14 +13,25 @@ namespace HashCode2017
         const string BasePath = @"C:\Users\vince\Downloads";
         static void Main(string[] args)
         {
-            var files = new List<string>() { "sample" };
+            Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
+
+
+            var files = new List<string>() { "sample", "me_at_the_zoo", "trending_today", "kittens", "videos_worth_spreading" };
             foreach (var file in files)
             {
+                Console.WriteLine($" File: {file}");
+                var sw = Stopwatch.StartNew();
+
                 var data = ReadInputFile(file);
                 var algo = new HooAlgorithm(data);
                 algo.Calculate();
                 WriteResult(file, data);
+
+                sw.Stop();
+                Console.Write($" {sw.Elapsed}");
+                Console.WriteLine();
             }
+            Console.ReadLine();
         }
 
         private static void WriteResult(string inputFile, Data data)

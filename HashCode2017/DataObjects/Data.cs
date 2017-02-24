@@ -1,6 +1,6 @@
 ﻿namespace HashCode2017.DataObjects
 {
-    public struct Data
+    public class Data
     {
         public Cache[] Caches { get; internal set; }
         public Endpoint[] Endpoints { get; internal set; }
