@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace HashCode2017.DataObjects
 {
@@ -8,5 +9,11 @@ namespace HashCode2017.DataObjects
         public int RemainingCapacity { get; set; }
         public IList<Video> Videos { get; set; }
         public IList<CacheToEndpointLatency> Endpoints { get; set; }
+
+        internal void AddVideo(Video video)
+        {
+            RemainingCapacity -= video.Size;
+            Videos.Add(video);
+        }
     }
 }

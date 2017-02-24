@@ -46,6 +46,7 @@
     <Compile Include="DataObjects\Cache.cs" />
     <Compile Include="DataObjects\CacheToEndpointLatency.cs" />
     <Compile Include="DataObjects\Data.cs" />
+    <Compile Include="TimerArea.cs" />
     <None Include="files\kittens.in" />
     <None Include="files\me_at_the_zoo.in" />
     <Compile Include="DataObjects\Video.cs" />

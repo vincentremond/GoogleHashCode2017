@@ -15,7 +15,7 @@ namespace HashCode2017
             _data = data;
         }
 
-        public class Score
+        private class Score
         {
             public Video Video { get; set; }
             public Cache Cache { get; set; }
@@ -24,48 +24,52 @@ namespace HashCode2017
 
         public void Calculate()
         {
-            var possibilities = (
-                    from v in _data.Videos
-                    from c in _data.Caches
-                    select new Score
-                    {
-                        Video = v,
-                        Cache = c,
-                        Value = null,
-                    }
-                ).ToList();
-
-            var last = DateTime.Now;
-            Console.WriteLine("Calculating scores");
-
-            Score bestScore = null;
-            do
+            List<Score> possibilities;
+            using (new TimerArea("   Generating possibilities... "))
             {
-                if ((DateTime.Now - last).TotalSeconds >= 10)
-                {
-                    last = DateTime.Now;
-                    Console.WriteLine(possibilities.Count);
-                }
+                possibilities = (
+                        from v in _data.Videos
+                        from c in _data.Caches
+                        select new Score
+                        {
+                            Video = v,
+                            Cache = c,
+                            Value = null,
+                        }
+                    ).ToList();
+            }
 
-                CleanPossibilities(possibilities);
+            using (new TimerArea("   Calculating scores... "))
+            {
                 ComputeScores(possibilities);
                 possibilities.RemoveAll(p => !p.Value.HasValue || p.Value.Value == 0);
-                bestScore = GetBestScore(possibilities);
-                if (bestScore != null)
+            }
+
+            using (new TimerArea("   Sorting... "))
+            {
+                possibilities = possibilities
+                    .AsParallel()
+                    .OrderByDescending(p => p.Value.Value)
+                    .ThenBy(p => p.Video.Size)
+                    .ToList();
+            }
+
+            using (new TimerArea("   Adding results... "))
+            {
+                foreach (var possibility in possibilities)
                 {
-                    // add best video to cache
-                    bestScore.Cache.Videos.Add(bestScore.Video);
-                    // reset score for impacted possibilities
-                    foreach (var p in possibilities.Where(p => p.Video == bestScore.Video || p.Cache == bestScore.Cache))
+                    var video = possibility.Video;
+                    var cache = possibility.Cache;
+                    if (cache.RemainingCapacity < video.Size)
                     {
-                        p.Value = null;
+                        continue;
                     }
-                    possibilities.Remove(bestScore);
+                    cache.AddVideo(video);
                 }
-            } while (bestScore != null);
+            }
         }
 
-        protected void ComputeScores(List<Score> possibilities)
+        private void ComputeScores(List<Score> possibilities)
         {
             Parallel.ForEach(possibilities, possibility =>
             {
@@ -76,39 +80,6 @@ namespace HashCode2017
 
                 possibility.Value = possibility.Cache.Endpoints.Sum(e => e.Endpoint.VideosRequest[possibility.Video.VideoId] * (e.Endpoint.LatencyToDatacenter - e.LatencyToEndpoint));
             });
-        }
-
-        protected Score GetBestScore(List<Score> possibilities)
-        {
-            return possibilities
-                .OrderByDescending(p => p.Value.Value)
-                .ThenBy(p => p.Video.Size)
-                .FirstOrDefault();
-        }
-
-        protected void CleanPossibilities(List<Score> possibilities)
-        {
-            for (int index = possibilities.Count - 1; index >= 0; index--)
-            {
-                var possibility = possibilities[index];
-                var video = possibility.Video;
-                var cache = possibility.Cache;
-                var remove = false;
-                // video too big for cache ?
-                if (cache.RemainingCapacity < video.Size)
-                {
-                    remove = true;
-                }
-                else if (cache.Endpoints.Sum(e => e.Endpoint.VideosRequest[video.VideoId]) == 0) // no gain on this video
-                {
-                    remove = true;
-                }
-
-                if (remove)
-                {
-                    possibilities.RemoveAt(index);
-                }
-            }
         }
     }
 }

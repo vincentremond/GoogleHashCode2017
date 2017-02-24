@@ -16,10 +16,10 @@ namespace HashCode2017
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
 
 
-            var files = new List<string>() { "sample", "me_at_the_zoo", "trending_today", "kittens", "videos_worth_spreading" };
+            var files = new List<string>() { "sample", "me_at_the_zoo", "trending_today", "videos_worth_spreading", "kittens" };
             foreach (var file in files)
             {
-                Console.WriteLine($" File: {file}");
+                Console.WriteLine($"File: {file}");
                 var sw = Stopwatch.StartNew();
 
                 var data = ReadInputFile(file);
@@ -29,6 +29,7 @@ namespace HashCode2017
 
                 sw.Stop();
                 Console.Write($" {sw.Elapsed}");
+                Console.WriteLine();
                 Console.WriteLine();
             }
             Console.ReadLine();
