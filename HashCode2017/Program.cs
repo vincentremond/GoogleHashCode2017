@@ -104,18 +104,15 @@ namespace HashCode2017
                 {
                     remove = true;
                 }
-                else if (cache.Endpoints.Sum(e => data.Endpoints[e.EndpointId].VideosRequest[video.VideoId]) == 0)
+                else if (cache.Endpoints.Sum(e => data.Endpoints[e.EndpointId].VideosRequest[video.VideoId]) == 0) // no gain on this video
                 {
                     remove = true;
                 }
 
                 if (remove)
                 {
+                    possibilities.RemoveAt(index);
                 }
-            }
-            foreach (var possibility in possibilities)
-            {
-                var video = data.Videos
             }
         }
 

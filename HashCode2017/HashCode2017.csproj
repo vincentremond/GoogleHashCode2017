@@ -48,7 +48,6 @@
     <Compile Include="DataObjects\Data.cs" />
     <None Include="files\kittens.in" />
     <None Include="files\me_at_the_zoo.in" />
-    <None Include="Program.cs.old" />
     <Compile Include="DataObjects\Video.cs" />
     <Compile Include="DataObjects\Endpoint.cs" />
     <Compile Include="DataObjects\EndpointLatencyToCache.cs" />
