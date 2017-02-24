@@ -2,10 +2,11 @@
 
 namespace HashCode2017.DataObjects
 {
-    public class Cache
+    public struct Cache
     {
         public int CacheId { get; set; }
         public int RemainingCapacity { get; set; }
-        public IList<Video> Videos { get; set; } = new List<Video>();
+        public IList<Video> Videos { get; set; }
+        public IList<CacheToEndpointLatency> Endpoints { get; set; }
     }
 }

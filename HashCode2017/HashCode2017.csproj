@@ -44,7 +44,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DataObjects\Cache.cs" />
-    <Compile Include="DataObjects\Request.cs" />
+    <Compile Include="DataObjects\CacheToEndpointLatency.cs" />
+    <Compile Include="DataObjects\Data.cs" />
     <None Include="files\kittens.in" />
     <None Include="files\me_at_the_zoo.in" />
     <None Include="Program.cs.old" />
