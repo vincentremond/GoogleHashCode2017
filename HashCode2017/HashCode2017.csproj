@@ -43,8 +43,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DataObjects\Cache.cs" />
+    <Compile Include="DataObjects\Request.cs" />
+    <None Include="files\kittens.in" />
+    <None Include="files\me_at_the_zoo.in" />
+    <None Include="Program.cs.old" />
+    <Compile Include="DataObjects\Video.cs" />
+    <Compile Include="DataObjects\Endpoint.cs" />
+    <Compile Include="DataObjects\EndpointLatencyToCache.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="files\sample.in" />
+    <None Include="files\trending_today.in" />
+    <None Include="files\videos_worth_spreading.in" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

@@ -1,0 +1,258 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Hashcode.Kefna
+{
+    class FileReader
+    {
+        const string defaultfilePath = "C:\\temp\\hashcode\\";
+
+        public List<List<string>> GetFileContent(string fileName, string filePath = defaultfilePath)
+        {
+            // Read the file as one string.
+            System.IO.StreamReader myFile =
+               new System.IO.StreamReader(filePath + fileName);
+
+            List<List<string>> result = new List<List<string>>();
+            string line = string.Empty;
+
+            while ((line = myFile.ReadLine()) != null)
+            {
+                result.Add(line.Split(' ').ToList<string>());
+            }
+
+
+            myFile.Close();
+
+
+            return result;
+        }
+
+    }
+
+
+    class Program
+    {
+
+
+        static void Main(string[] args)
+        {
+            var fileName = "trending_today";
+
+            FileReader fileReader = new FileReader();
+            List<List<string>> inputFile = fileReader.GetFileContent($"{fileName}.in");
+
+            //List<List<string>> meatzoo = fileReader.GetFileContent("me_at_the_zoo.in");
+            //List<List<string>> trendingtoday = fileReader.GetFileContent("trending_today.in");
+            //List<List<string>> videosworthspreading = fileReader.GetFileContent("videos_worth_spreading.in");
+
+            List<string> firstline = inputFile.First();
+
+            long nbVideos = long.Parse(firstline[0]);
+            long nbEndpolongs = long.Parse(firstline[1]);
+            long nbRequests = long.Parse(firstline[2]);
+            long nbCacheServers = long.Parse(firstline[3]);
+            long cacheServersCapacity = long.Parse(firstline[4]);
+
+            var caches = new List<CacheServer>();
+            caches.AddRange(Enumerable.Range(0, (int)nbCacheServers).Select(x => new CacheServer { Index = x, RemainingSize = cacheServersCapacity }));
+
+            var videos = new List<Video>();
+            for (var i = 0; i < nbVideos; i++)
+            {
+                var size = long.Parse(inputFile[1][i]);
+                if (size <= cacheServersCapacity)
+                {
+                    videos.Add(new Kefna.Video { Index = i, Size = size });
+                }
+            }
+
+            // Endpolongs
+            List<Endpolong> endpolongs = new List<Endpolong>();
+            var requestStartLine = 2;
+            var line = 2;
+            for (long epIndex = 0; epIndex < nbEndpolongs; epIndex++)
+            {
+                Endpolong ep = new Endpolong();
+                ep.index = epIndex;
+                ep.datacenterLatency = long.Parse(inputFile[line][0]);
+                var nbCaches = int.Parse(inputFile[line][1]);
+
+                for (var latencyIndex = 1; latencyIndex <= nbCaches; latencyIndex++)
+                {
+                    ep.latencies.Add(new LatencyToCacheServer()
+                    {
+                        serverIndex = long.Parse(inputFile[line + latencyIndex][0]),
+                        latency = long.Parse(inputFile[line + latencyIndex][1])
+                    });
+                }
+                endpolongs.Add(ep);
+
+                requestStartLine += 1 + nbCaches;
+                line += 1 + nbCaches;
+            }
+
+
+
+            // Requests
+            List<Request> requests = new List<Request>();
+            for (var j = requestStartLine; j < inputFile.Count; j++)
+            {
+                requests.Add(
+                    new Request()
+                    {
+                        videoIndex = long.Parse(inputFile[j][0]),
+                        endpolongIndex = long.Parse(inputFile[j][1]),
+                        nbRequests = long.Parse(inputFile[j][2])
+                    });
+            }
+
+            var cacheToPreserve = new List<long>();
+            foreach (var endpolong in endpolongs)
+            {
+                foreach (var latency in endpolong.latencies)
+                {
+                    if (!cacheToPreserve.Contains(latency.serverIndex))
+                    {
+                        cacheToPreserve.Add(latency.serverIndex);
+                    }
+                }
+            }
+
+            caches.RemoveAll(x => !cacheToPreserve.Contains(x.Index));
+            endpolongs.RemoveAll(x => x.latencies.Count == 0);
+            requests.RemoveAll(x => !videos.Any(x2 => x2.Index == x.videoIndex)
+                                    || !endpolongs.Any(x2 => x2.index == x.endpolongIndex));
+
+            var results = Do(videos, caches, requests, endpolongs);
+
+            var stringBuilder = new StringBuilder();
+            stringBuilder.AppendLine(results.Count.ToString());
+            foreach (var result in results)
+            {
+                stringBuilder.AppendLine(string.Format("{0} {1}", result.CacheId, string.Join(" ", result.Videos)));
+            }
+
+            var test = stringBuilder.ToString();
+
+            File.WriteAllText($@"C:\temp\hashcode\{fileName}.out", test.ToString());
+        }
+
+
+        public static List<Result> Do(List<Video> videos,
+                               List<CacheServer> caches,
+                               List<Request> requests,
+                               List<Endpolong> endpolongs)
+        {
+            var results = new List<Result>();
+            var locker = new object();
+
+            // cache index, video index, score
+            List<Tuple<long, long, long>> scores = new List<Tuple<long, long, long>>();
+
+            Parallel.ForEach(videos, video =>
+            {
+                Console.WriteLine("sarted video " + video.Index);
+                foreach (var endpoint in endpolongs)
+                {
+                    var request = requests.FirstOrDefault(x => x.endpolongIndex == endpoint.index && x.videoIndex == video.Index);
+
+                    if (request == null)
+                    {
+                        continue;
+                    }
+
+                    var cache =
+                    endpoint.latencies.OrderBy(x => x.latency)
+                                      .FirstOrDefault();
+
+                    if (cache == null)
+                    {
+                        continue;
+                    }
+
+                    var score = (request.nbRequests * endpoint.datacenterLatency) - (request.nbRequests * cache.latency);
+
+                    lock (locker)
+                    {
+                        scores.Add(new Tuple<long, long, long>(cache.serverIndex, video.Index, score));
+                    }
+                }
+            });
+
+            while (true)
+            {
+                var bestScore = (from score in scores
+                                 let video = videos.FirstOrDefault(x => x.Index == score.Item2)
+                                 let cache = caches.FirstOrDefault(x => x.Index == score.Item1)
+                                 where cache.RemainingSize >= video.Size
+                                 orderby score.Item3 descending
+                                 select score).FirstOrDefault();
+
+                if (bestScore == null)
+                {
+                    break;
+                }
+
+                var result = results.FirstOrDefault(x => x.CacheId == bestScore.Item1);
+
+                if (result == null)
+                {
+                    result = new Result() { CacheId = bestScore.Item1 };
+                    results.Add(result);
+                }
+
+                if (!result.Videos.Contains(bestScore.Item2))
+                {
+                    result.Videos.Add(bestScore.Item2);
+                }
+
+                caches.Single(x => x.Index == bestScore.Item1).RemainingSize -= videos.Single(x => x.Index == bestScore.Item2).Size;
+
+            }
+
+            return results;
+        }
+    }
+
+    public class Video
+    {
+        public long Index { get; set; }
+        public long Size { get; set; }
+    }
+
+    public class Result
+    {
+        public long CacheId { get; set; }
+        public List<long> Videos { get; set; } = new List<long>();
+    }
+
+    class Endpolong
+    {
+        public long index;
+        public long datacenterLatency;
+        public List<LatencyToCacheServer> latencies = new List<LatencyToCacheServer>();
+    }
+    class LatencyToCacheServer
+    {
+        public long serverIndex;
+        public long latency;
+    }
+
+    class CacheServer
+    {
+        public long Index { get; set; }
+        public long RemainingSize { get; set; }
+    }
+
+    class Request
+    {
+        public long nbRequests;
+        public long videoIndex;
+        public long endpolongIndex;
+    }
+}
