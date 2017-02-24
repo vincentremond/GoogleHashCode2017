@@ -51,6 +51,7 @@
     <Compile Include="DataObjects\Video.cs" />
     <Compile Include="DataObjects\Endpoint.cs" />
     <Compile Include="DataObjects\EndpointLatencyToCache.cs" />
+    <Compile Include="HooAlgorithm.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <None Include="files\sample.in" />

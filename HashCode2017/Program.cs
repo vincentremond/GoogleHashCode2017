@@ -16,7 +16,8 @@ namespace HashCode2017
             foreach (var file in files)
             {
                 var data = ReadInputFile(file);
-                Calculate(data);
+                var algo = new HooAlgorithm(data);
+                algo.Calculate();
                 WriteResult(file, data);
             }
         }
@@ -33,87 +34,13 @@ namespace HashCode2017
                 result.Append(cache.CacheId);
                 foreach (var video in cache.Videos)
                 {
-                    result.Append(" ").Append(video.VideoId).Append("\n");
+                    result.Append(" ").Append(video.VideoId);
                 }
+                result.Append("\n");
             }
 
             var inputFilePath = Path.Combine(BasePath, $"{inputFile}.out");
             File.WriteAllText(inputFilePath, result.ToString());
-        }
-
-        public class Score
-        {
-            public int VideoId { get; set; }
-            public int CacheId { get; set; }
-            public int? Value { get; set; }
-        }
-
-        private static void Calculate(Data data)
-        {
-            var possibilities = (
-                    from v in data.Videos
-                    from c in data.Caches
-                    select new Score
-                    {
-                        VideoId = v.VideoId,
-                        CacheId = c.CacheId,
-                        Value = null,
-                    }
-                ).ToList();
-
-            Score bestScore = null;
-            do
-            {
-                CleanPossibilities(data, possibilities);
-                ComputeScores(possibilities);
-                possibilities.RemoveAll(p => !p.Value.HasValue || p.Value.Value == 0);
-                bestScore = GetBestScore(possibilities);
-                if (bestScore != null)
-                {
-                    // add best video to cache
-                    data.Caches[bestScore.CacheId].Videos.Add(data.Videos[bestScore.VideoId]);
-                    // reset score for impacted possibilities
-                    foreach (var p in possibilities.Where(p => p.VideoId == bestScore.VideoId || p.CacheId == bestScore.CacheId))
-                    {
-                        p.Value = null;
-                    }
-                }
-            } while (bestScore != null);
-        }
-
-        private static void ComputeScores(List<Score> possibilities)
-        {
-            throw new NotImplementedException();
-        }
-
-        private static Score GetBestScore(List<Score> possibilities)
-        {
-            return possibilities.OrderBy(p => p.Value.Value).FirstOrDefault();
-        }
-
-        private static void CleanPossibilities(Data data, List<Score> possibilities)
-        {
-            for (int index = possibilities.Count - 1; index >= 0; index--)
-            {
-                var possibility = possibilities[index];
-                var video = data.Videos[possibility.VideoId];
-                var cache = data.Caches[possibility.CacheId];
-                var remove = false;
-                // video too big for cache ?
-                if (cache.RemainingCapacity < video.Size)
-                {
-                    remove = true;
-                }
-                else if (cache.Endpoints.Sum(e => data.Endpoints[e.EndpointId].VideosRequest[video.VideoId]) == 0) // no gain on this video
-                {
-                    remove = true;
-                }
-
-                if (remove)
-                {
-                    possibilities.RemoveAt(index);
-                }
-            }
         }
 
         protected static Data ReadInputFile(string inputFile)
@@ -191,7 +118,7 @@ namespace HashCode2017
             {
                 foreach (var latency in endpoint.Latencies)
                 {
-                    data.Caches[latency.CacheId].Endpoints.Add(new CacheToEndpointLatency { EndpointId = endpoint.EndpointId, LatencyToEndpoint = latency.LatencyToCache });
+                    data.Caches[latency.CacheId].Endpoints.Add(new CacheToEndpointLatency { EndpointId = endpoint.EndpointId, Endpoint = endpoint, LatencyToEndpoint = latency.LatencyToCache });
                 }
             }
 
