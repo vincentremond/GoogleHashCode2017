@@ -69,11 +69,14 @@ namespace HashCode2017
 
             using (new TimerArea("   Sorting... "))
             {
-                possibilities.Sort(comparer);
+                SortPossibilities(ref possibilities,  comparer);
             }
 
+            var initialPossibilitiesCount = possibilities.Count;
+            var startTime = DateTime.Now;
             var refTime = DateTime.Now;
             long? bestDisqualified = null;
+            var disqualified = new List<Score>();
             using (new TimerArea("   Adding results... "))
             {
                 Console.WriteLine();
@@ -82,17 +85,24 @@ namespace HashCode2017
                     if ((DateTime.Now - refTime).TotalSeconds > 2)
                     {
                         refTime = DateTime.Now;
-                        Console.WriteLine($"{refTime:O} {possibilities.Count}");
+
+                        var done = initialPossibilitiesCount - possibilities.Count;
+                        var doneIn = (refTime - startTime).TotalSeconds;
+                        var remainingDuration = TimeSpan.FromSeconds(possibilities.Count * doneIn / done);
+
+                        Console.WriteLine($"{refTime:O} {possibilities.Count} {remainingDuration}");
                     }
 
                     // need resort ?
                     if(bestDisqualified.HasValue && bestDisqualified.Value > possibilities[0].Value)
                     {
+                        possibilities.AddRange(disqualified);
                         bestDisqualified = null;
-                        possibilities.Sort(comparer);
+                        disqualified = new List<Score>();
+                        SortPossibilities(ref possibilities, comparer);
                     }
 
-                    var possibility = possibilities.GetAndRemoveFirst();
+                    var possibility = possibilities.GetAndRemoveLast();
                     var video = possibility.Video;
                     var cache = possibility.Cache;
 
@@ -115,13 +125,22 @@ namespace HashCode2017
                         {
                             bestDisqualified = possibility.Value;
                         }
-
-                        possibilities.Add(possibility);
+                        disqualified.Add(possibility);
                         continue;
                     }
                     cache.AddVideo(video);
                 }
             }
+        }
+
+        private void SortPossibilities(ref List<Score> possibilities, ScoreComparer comparer)
+        {
+            possibilities.Sort(comparer);
+            //possibilities = possibilities
+            //    .AsParallel()
+            //    .OrderBy(p => p.Value)
+            //    .ThenByDescending(p => p.Video.Size)
+            //    .ToList();
         }
 
         private void RecalculateWithContext(Score possibility)

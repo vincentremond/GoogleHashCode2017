@@ -8,10 +8,11 @@ namespace HashCode2017
 {
     public static class ListHelper
     {
-        public static T GetAndRemoveFirst<T>(this List<T> list)
+        public static T GetAndRemoveLast<T>(this List<T> list)
         {
-            var result = list[0];
-            list.RemoveAt(0);
+            var lastIndex = list.Count - 1;
+            var result = list[lastIndex];
+            list.RemoveAt(lastIndex);
             return result;
         }
 
