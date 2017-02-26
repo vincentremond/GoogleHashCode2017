@@ -24,13 +24,13 @@ namespace HashCode2017
         {
             public int Compare(Score x, Score y)
             {
-                var a = x.Value.CompareTo(y.Value);
+                var a = -x.Value.CompareTo(y.Value);
                 if (a != 0) return a;
-                var b = -x.Video.Size.CompareTo(y.Video.Size);
+                var b = x.Video.Size.CompareTo(y.Video.Size);
                 if (b != 0) return b;
-                var c = x.Video.VideoId.CompareTo(y.Video.VideoId);
+                var c = -x.Video.VideoId.CompareTo(y.Video.VideoId);
                 if (c != 0) return c;
-                var d = x.Cache.CacheId.CompareTo(y.Cache.CacheId);
+                var d = -x.Cache.CacheId.CompareTo(y.Cache.CacheId);
                 if (d != 0) return d;
                 //throw new InvalidOperationException("Duplicates ?");                
                 return 0;
@@ -73,19 +73,26 @@ namespace HashCode2017
             }
 
             var refTime = DateTime.Now;
-
+            long? bestDisqualified = null;
             using (new TimerArea("   Adding results... "))
             {
                 Console.WriteLine();
                 while (possibilities.Count > 0)
                 {
-                    if ((DateTime.Now - refTime).TotalMinutes > 2)
+                    if ((DateTime.Now - refTime).TotalSeconds > 2)
                     {
                         refTime = DateTime.Now;
                         Console.WriteLine($"{refTime:O} {possibilities.Count}");
                     }
 
-                    var possibility = possibilities.GetAndRemoveLast();
+                    // need resort ?
+                    if(bestDisqualified.HasValue && bestDisqualified.Value > possibilities[0].Value)
+                    {
+                        bestDisqualified = null;
+                        possibilities.Sort(comparer);
+                    }
+
+                    var possibility = possibilities.GetAndRemoveFirst();
                     var video = possibility.Video;
                     var cache = possibility.Cache;
 
@@ -104,7 +111,12 @@ namespace HashCode2017
 
                     if (oldScore != possibility.Value)
                     {
-                        possibilities.AddSorted(possibility, comparer);
+                        if(!bestDisqualified.HasValue || bestDisqualified.Value > bestDisqualified.Value)
+                        {
+                            bestDisqualified = possibility.Value;
+                        }
+
+                        possibilities.Add(possibility);
                         continue;
                     }
                     cache.AddVideo(video);
