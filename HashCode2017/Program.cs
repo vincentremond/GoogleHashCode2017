@@ -13,14 +13,15 @@ namespace HashCode2017
         const string BasePath = @"C:\Users\vince\Downloads";
         static void Main(string[] args)
         {
+            Console.WindowWidth = 120;
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
 
 
             var files = new List<string>() {
-                //"sample",
-                //"me_at_the_zoo",
-                //"videos_worth_spreading",
-                //"trending_today",
+                "sample",
+                "me_at_the_zoo",
+                "videos_worth_spreading",
+                "trending_today",
                 "kittens",
             };
             foreach (var file in files)
@@ -29,7 +30,7 @@ namespace HashCode2017
                 var sw = Stopwatch.StartNew();
 
                 var data = ReadInputFile(file);
-                var algo = new HooAlgorithm(data);
+                var algo = new Algorithm(data);
                 algo.Calculate();
                 WriteResult(file, data);
 
@@ -86,6 +87,7 @@ namespace HashCode2017
                             RemainingCapacity = cacheSize,
                             Endpoints = new List<CacheToEndpointLatency>(),
                             Videos = new List<Video>(),
+                            HasVideo = new bool[videoCount],
                         })
                         .ToArray();
 

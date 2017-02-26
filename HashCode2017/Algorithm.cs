@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace HashCode2017
 {
-    public class HooAlgorithm
+    public class Algorithm
     {
         protected class Score
         {
@@ -16,7 +16,7 @@ namespace HashCode2017
 
             public override string ToString()
             {
-                return $"[Video:{Video.VideoId}/Cache:{Cache.CacheId}/Gain:{Value}]";
+                return $"[Gain:{Value}/Video:{Video.VideoId}/Cache:{Cache.CacheId}]";
             }
         }
 
@@ -24,22 +24,21 @@ namespace HashCode2017
         {
             public int Compare(Score x, Score y)
             {
-                var a = -x.Value.CompareTo(y.Value);
+                var a = x.Value.CompareTo(y.Value);
                 if (a != 0) return a;
-                var b = x.Video.Size.CompareTo(y.Video.Size);
+                var b = -x.Video.Size.CompareTo(y.Video.Size);
                 if (b != 0) return b;
-                var c = -x.Video.VideoId.CompareTo(y.Video.VideoId);
+                var c = x.Video.VideoId.CompareTo(y.Video.VideoId);
                 if (c != 0) return c;
-                var d = -x.Cache.CacheId.CompareTo(y.Cache.CacheId);
+                var d = x.Cache.CacheId.CompareTo(y.Cache.CacheId);
                 if (d != 0) return d;
-                //throw new InvalidOperationException("Duplicates ?");                
                 return 0;
             }
         }
 
         private Data _data;
 
-        public HooAlgorithm(Data data)
+        public Algorithm(Data data)
         {
             _data = data;
         }
@@ -69,7 +68,7 @@ namespace HashCode2017
 
             using (new TimerArea("   Sorting... "))
             {
-                SortPossibilities(ref possibilities,  comparer);
+                SortPossibilities(possibilities, comparer);
             }
 
             var initialPossibilitiesCount = possibilities.Count;
@@ -81,9 +80,9 @@ namespace HashCode2017
             using (new TimerArea("   Adding results... "))
             {
                 Console.WriteLine();
-                while (possibilities.Count > 0)
+                while (possibilities.Count > 0 || RefillDisqualified(possibilities, disqualified, comparer))
                 {
-                    if ((DateTime.Now - refTime).TotalSeconds > 60)
+                    if ((DateTime.Now - refTime).TotalSeconds > 5)
                     {
                         refTime = DateTime.Now;
 
@@ -91,19 +90,22 @@ namespace HashCode2017
                         var doneIn = (refTime - startTime).TotalSeconds;
                         var remainingDuration = TimeSpan.FromSeconds(possibilities.Count * doneIn / done);
 
-                        Console.WriteLine($"{refTime:O} / Possibilities : {possibilities.Count} / Remaining time : {remainingDuration} / Sorts : {sortCount}");
+                        Console.WriteLine($"{refTime:O} / Poss : {possibilities.Count} / Rem : {remainingDuration} / Sorts : {sortCount} / Disc : {disqualified.Count}");
 
                         sortCount = 0;
                     }
 
                     // need resort ?
-                    if(bestDisqualified.HasValue && bestDisqualified.Value > possibilities[0].Value)
+                    if (bestDisqualified.HasValue && bestDisqualified.Value > possibilities.Last().Value)
                     {
-                        possibilities.AddRange(disqualified);
+                        if (disqualified.Count > 0)
+                        {
+                            possibilities.AddRange(disqualified);
+                            SortPossibilities(possibilities, comparer);
+                        }
                         sortCount++;
                         bestDisqualified = null;
                         disqualified = new List<Score>();
-                        SortPossibilities(ref possibilities, comparer);
                     }
 
                     var possibility = possibilities.GetAndRemoveLast();
@@ -125,7 +127,7 @@ namespace HashCode2017
 
                     if (oldScore != possibility.Value)
                     {
-                        if(!bestDisqualified.HasValue || bestDisqualified.Value > bestDisqualified.Value)
+                        if (!bestDisqualified.HasValue || possibility.Value > bestDisqualified.Value)
                         {
                             bestDisqualified = possibility.Value;
                         }
@@ -137,24 +139,43 @@ namespace HashCode2017
             }
         }
 
-        private void SortPossibilities(ref List<Score> possibilities, ScoreComparer comparer)
+        private bool RefillDisqualified(List<Score> possibilities, List<Score> disqualified, ScoreComparer comparer)
+        {
+            if (disqualified.Count > 0)
+            {
+                possibilities.AddRange(disqualified);
+                SortPossibilities(possibilities, comparer);
+                disqualified.Clear();
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        private void SortPossibilities(List<Score> possibilities, ScoreComparer comparer)
         {
             possibilities.Sort(comparer);
-            //possibilities = possibilities
-            //    .AsParallel()
-            //    .OrderBy(p => p.Value)
-            //    .ThenByDescending(p => p.Video.Size)
-            //    .ToList();
         }
 
         private void RecalculateWithContext(Score possibility)
         {
             possibility.Value = possibility.Cache.Endpoints.Sum(e =>
             {
-                var cacheLatency = e.Endpoint.Caches.Where(c => c.Cache.Videos.Contains(possibility.Video)).OrderBy(c => c.Latency).FirstOrDefault();
-                var latency = cacheLatency != null ? cacheLatency.Latency : e.Endpoint.LatencyToDatacenter;
-                var score = e.Endpoint.VideosRequest[possibility.Video.VideoId] * (latency - e.LatencyToEndpoint);
-                return score;
+                var cacheLatency = e.Endpoint.Caches
+                    .Where(c => c.Cache.HasVideo[possibility.Video.VideoId])
+                    .OrderBy(c => c.Latency)
+                    .FirstOrDefault();
+                var newLatency = (cacheLatency != null ? cacheLatency.Latency : e.Endpoint.LatencyToDatacenter) - e.LatencyToEndpoint;
+                if (newLatency < 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return e.Endpoint.VideosRequest[possibility.Video.VideoId] * newLatency;
+                }
             });
         }
 
