@@ -46,12 +46,13 @@
     <Compile Include="DataObjects\Cache.cs" />
     <Compile Include="DataObjects\CacheToEndpointLatency.cs" />
     <Compile Include="DataObjects\Data.cs" />
+    <Compile Include="ListHelper.cs" />
     <Compile Include="TimerArea.cs" />
     <None Include="files\kittens.in" />
     <None Include="files\me_at_the_zoo.in" />
     <Compile Include="DataObjects\Video.cs" />
     <Compile Include="DataObjects\Endpoint.cs" />
-    <Compile Include="DataObjects\EndpointLatencyToCache.cs" />
+    <Compile Include="DataObjects\LinkToCache.cs" />
     <Compile Include="HooAlgorithm.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

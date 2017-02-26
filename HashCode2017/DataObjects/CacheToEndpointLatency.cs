@@ -2,8 +2,8 @@
 {
     public class CacheToEndpointLatency
     {
-        public Endpoint Endpoint { get; internal set; }
-        public int EndpointId { get; set; }
-        public long LatencyToEndpoint { get; set; }
+        public Endpoint Endpoint;
+        public int EndpointId;
+        public long LatencyToEndpoint;
     }
 }

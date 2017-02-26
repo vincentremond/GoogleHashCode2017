@@ -16,7 +16,7 @@ namespace HashCode2017
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
 
 
-            var files = new List<string>() { "sample", "me_at_the_zoo", "trending_today", "videos_worth_spreading", "kittens" };
+            var files = new List<string>() { "sample", "me_at_the_zoo", "videos_worth_spreading", "trending_today", "kittens" };
             foreach (var file in files)
             {
                 Console.WriteLine($"File: {file}");
@@ -101,16 +101,16 @@ namespace HashCode2017
                     LatencyToDatacenter = split[0],
                     LinkedCacheCount = split[1],
                     VideosRequest = new int[videoCount],
-                    Latencies = new List<EndpointLatencyToCache>(),
+                    Caches = new List<LinkToCache>(),
                 };
 
                 for (int linkedCacheIndex = 0; linkedCacheIndex < endpoint.LinkedCacheCount; linkedCacheIndex++)
                 {
                     split = SplitInt(content[index++]);
-                    endpoint.Latencies.Add(new EndpointLatencyToCache
+                    endpoint.Caches.Add(new LinkToCache
                     {
-                        CacheId = split[0],
-                        LatencyToCache = split[1],
+                        Cache = data.Caches[split[0]],
+                        Latency = split[1],
                     });
                 }
             }
@@ -129,9 +129,9 @@ namespace HashCode2017
             // remapping caches to endpoints
             foreach (var endpoint in data.Endpoints)
             {
-                foreach (var latency in endpoint.Latencies)
+                foreach (var latency in endpoint.Caches)
                 {
-                    data.Caches[latency.CacheId].Endpoints.Add(new CacheToEndpointLatency { EndpointId = endpoint.EndpointId, Endpoint = endpoint, LatencyToEndpoint = latency.LatencyToCache });
+                    latency.Cache.Endpoints.Add(new CacheToEndpointLatency { EndpointId = endpoint.EndpointId, Endpoint = endpoint, LatencyToEndpoint = latency.Latency });
                 }
             }
 
