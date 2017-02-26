@@ -32,7 +32,8 @@ namespace HashCode2017
                 if (c != 0) return c;
                 var d = x.Cache.CacheId.CompareTo(y.Cache.CacheId);
                 if (d != 0) return d;
-                throw new InvalidOperationException("Duplicates ?");                
+                //throw new InvalidOperationException("Duplicates ?");                
+                return 0;
             }
         }
 
@@ -63,32 +64,28 @@ namespace HashCode2017
             using (new TimerArea("   Calculating scores... "))
             {
                 ComputeScores(possibilities);
-                possibilities.RemoveAll(p => p.Value == 0);
+                possibilities.RemoveAll(p => p.Value <= 0);
             }
 
-            var sortedPossibilities = new SortedList<Score, long>(possibilities.Count, comparer);
             using (new TimerArea("   Sorting... "))
             {
-                foreach (var possibility in possibilities)
-                {
-                    sortedPossibilities.Add(possibility, possibility.Value);
-                }
-                possibilities = null;
+                possibilities.Sort(comparer);
             }
 
             var refTime = DateTime.Now;
 
             using (new TimerArea("   Adding results... "))
             {
-                while (sortedPossibilities.Count > 0)
+                Console.WriteLine();
+                while (possibilities.Count > 0)
                 {
-                    //if((DateTime.Now - refTime).TotalSeconds > 10)
-                    //{
-                    //    Console.WriteLine(sortedPossibilities.Count);
-                    //    refTime = DateTime.Now;
-                    //}
+                    if ((DateTime.Now - refTime).TotalMinutes > 2)
+                    {
+                        refTime = DateTime.Now;
+                        Console.WriteLine($"{refTime:O} {possibilities.Count}");
+                    }
 
-                    var possibility = sortedPossibilities.GetAndRemoveLast().Key;
+                    var possibility = possibilities.GetAndRemoveLast();
                     var video = possibility.Video;
                     var cache = possibility.Cache;
 
@@ -100,14 +97,14 @@ namespace HashCode2017
                     var oldScore = possibility.Value;
                     RecalculateWithContext(possibility);
 
-                    if (possibility.Value == 0)
+                    if (possibility.Value <= 0)
                     {
                         continue;
                     }
 
                     if (oldScore != possibility.Value)
                     {
-                        sortedPossibilities.Add(possibility, possibility.Value);
+                        possibilities.AddSorted(possibility, comparer);
                         continue;
                     }
                     cache.AddVideo(video);
