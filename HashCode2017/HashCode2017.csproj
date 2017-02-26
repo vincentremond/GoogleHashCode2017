@@ -46,6 +46,7 @@
     <Compile Include="DataObjects\Cache.cs" />
     <Compile Include="DataObjects\CacheToEndpointLatency.cs" />
     <Compile Include="DataObjects\Data.cs" />
+    <Compile Include="HooAlgorithm2.cs" />
     <Compile Include="ListHelper.cs" />
     <Compile Include="TimerArea.cs" />
     <None Include="files\kittens.in" />

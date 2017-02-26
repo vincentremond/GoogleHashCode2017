@@ -23,7 +23,7 @@ namespace HashCode2017
                 var sw = Stopwatch.StartNew();
 
                 var data = ReadInputFile(file);
-                var algo = new HooAlgorithm(data);
+                var algo = new HooAlgorithm2(data);
                 algo.Calculate();
                 WriteResult(file, data);
 
