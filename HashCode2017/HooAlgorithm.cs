@@ -73,6 +73,7 @@ namespace HashCode2017
             }
 
             var initialPossibilitiesCount = possibilities.Count;
+            var sortCount = 0;
             var startTime = DateTime.Now;
             var refTime = DateTime.Now;
             long? bestDisqualified = null;
@@ -82,7 +83,7 @@ namespace HashCode2017
                 Console.WriteLine();
                 while (possibilities.Count > 0)
                 {
-                    if ((DateTime.Now - refTime).TotalSeconds > 2)
+                    if ((DateTime.Now - refTime).TotalSeconds > 60)
                     {
                         refTime = DateTime.Now;
 
@@ -90,13 +91,16 @@ namespace HashCode2017
                         var doneIn = (refTime - startTime).TotalSeconds;
                         var remainingDuration = TimeSpan.FromSeconds(possibilities.Count * doneIn / done);
 
-                        Console.WriteLine($"{refTime:O} {possibilities.Count} {remainingDuration}");
+                        Console.WriteLine($"{refTime:O} / Possibilities : {possibilities.Count} / Remaining time : {remainingDuration} / Sorts : {sortCount}");
+
+                        sortCount = 0;
                     }
 
                     // need resort ?
                     if(bestDisqualified.HasValue && bestDisqualified.Value > possibilities[0].Value)
                     {
                         possibilities.AddRange(disqualified);
+                        sortCount++;
                         bestDisqualified = null;
                         disqualified = new List<Score>();
                         SortPossibilities(ref possibilities, comparer);

@@ -16,14 +16,20 @@ namespace HashCode2017
             Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal;
 
 
-            var files = new List<string>() { "sample", "me_at_the_zoo", "videos_worth_spreading", "trending_today", "kittens" };
+            var files = new List<string>() {
+                //"sample",
+                //"me_at_the_zoo",
+                //"videos_worth_spreading",
+                //"trending_today",
+                "kittens",
+            };
             foreach (var file in files)
             {
                 Console.WriteLine($"File: {file}");
                 var sw = Stopwatch.StartNew();
 
                 var data = ReadInputFile(file);
-                var algo = new HooAlgorithm2(data);
+                var algo = new HooAlgorithm(data);
                 algo.Calculate();
                 WriteResult(file, data);
 
