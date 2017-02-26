@@ -82,15 +82,16 @@ namespace HashCode2017
                 Console.WriteLine();
                 while (possibilities.Count > 0 || RefillDisqualified(possibilities, disqualified, comparer))
                 {
-                    if ((DateTime.Now - refTime).TotalSeconds > 5)
+                    if ((DateTime.Now - refTime).TotalSeconds > 60)
                     {
                         refTime = DateTime.Now;
 
-                        var done = initialPossibilitiesCount - possibilities.Count;
+                        var todo = possibilities.Count + disqualified.Count;
+                        var done = initialPossibilitiesCount - todo;
                         var doneIn = (refTime - startTime).TotalSeconds;
-                        var remainingDuration = TimeSpan.FromSeconds(possibilities.Count * doneIn / done);
+                        var remainingDuration = TimeSpan.FromSeconds(todo * doneIn / done);
 
-                        Console.WriteLine($"{refTime:O} / Poss : {possibilities.Count} / Rem : {remainingDuration} / Sorts : {sortCount} / Disc : {disqualified.Count}");
+                        Console.WriteLine($"{refTime:O} / Total : {todo} / Poss : {possibilities.Count} / Rem : {remainingDuration} / Sorts : {sortCount} / Disc : {disqualified.Count}");
 
                         sortCount = 0;
                     }
